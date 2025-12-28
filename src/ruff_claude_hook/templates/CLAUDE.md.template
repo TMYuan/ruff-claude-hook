@@ -1,3 +1,5 @@
+<!-- ruff-claude-hook-start -->
+
 # Ruff Hook - Instructions for Claude
 
 ## Automatic Code Quality Workflow
@@ -140,3 +142,5 @@ Hook runs automatically
 ---
 
 **Remember:** The goal is to ensure every Python file you edit passes all quality checks before you report completion to the user. Read files when fixing errors, don't guess!
+
+<!-- ruff-claude-hook-end -->

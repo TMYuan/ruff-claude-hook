@@ -160,15 +160,49 @@ def init_project(force: bool = False) -> int:
     template_claude_md = template_dir / "CLAUDE.md.template"
 
     if claude_md_file.exists() and not force:
-        # Append to existing
-        print(f"📝 Appending to existing: {claude_md_file}")
+        # Smart merge - add or update ruff section
+        print(f"📝 Updating existing: {claude_md_file}")
+
         with open(template_claude_md) as f:
             template_content = f.read()
 
-        with open(claude_md_file, "a") as f:
-            f.write("\n\n---\n\n")
-            f.write(template_content)
-        print("   ✅ Ruff instructions appended")
+        with open(claude_md_file) as f:
+            existing_content = f.read()
+
+        # Markers to identify ruff section
+        start_marker = "<!-- ruff-claude-hook-start -->"
+        end_marker = "<!-- ruff-claude-hook-end -->"
+
+        # Strip markers from template (they're already in the template file)
+        # We just want the content between them
+        if start_marker in template_content and end_marker in template_content:
+            template_start = template_content.find(start_marker) + len(start_marker)
+            template_end = template_content.find(end_marker)
+            clean_template = template_content[template_start:template_end].strip()
+        else:
+            clean_template = template_content
+
+        # Check if ruff section already exists
+        if start_marker in existing_content and end_marker in existing_content:
+            # Replace existing section (keep existing markers)
+            start_idx = existing_content.find(start_marker) + len(start_marker)
+            end_idx = existing_content.find(end_marker)
+            new_content = (
+                existing_content[:start_idx]
+                + f"\n\n{clean_template}\n\n"
+                + existing_content[end_idx:]
+            )
+            print("   ✅ Ruff section updated")
+        else:
+            # Add new section with markers
+            new_content = (
+                f"{existing_content}\n\n---\n\n"
+                f"{start_marker}\n\n{clean_template}\n\n{end_marker}\n"
+            )
+            print("   ✅ Ruff section added")
+
+        with open(claude_md_file, "w") as f:
+            f.write(new_content)
 
     else:
         # Create from template
