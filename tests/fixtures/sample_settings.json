@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Read hook executed'"
+          }
+        ]
+      }
+    ]
+  },
+  "customSetting": "preserve this",
+  "anotherOption": {
+    "nested": "value"
+  }
+}

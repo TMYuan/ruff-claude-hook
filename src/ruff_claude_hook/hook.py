@@ -22,43 +22,66 @@ def main():
         data = json.loads(stdin_content)
     except json.JSONDecodeError:
         # Not valid JSON, skip silently
-        sys.exit(0)
+        return 0
 
-    # 2. Extract file path from tool input
-    file_path = data.get("tool_input", {}).get("file_path", "")
+    # 2. Check if this is an Edit tool call
+    tool_name = data.get("tool_name", "")
+    if tool_name != "Edit":
+        return 0
 
-    # 3. Validate file
+    # 3. Extract file path from tool input
+    # Support both "parameters" (new format) and "tool_input" (legacy)
+    file_path = data.get("parameters", {}).get("file_path") or data.get(
+        "tool_input", {}
+    ).get("file_path", "")
+
+    # 4. Validate file
     if not file_path:
-        sys.exit(0)
+        return 0
 
     if not file_path.endswith(".py"):
-        sys.exit(0)
+        return 0
 
     if not os.path.exists(file_path):
-        sys.exit(0)
+        return 0
 
     filename = os.path.basename(file_path)
 
-    # 4. Phase 1: Auto-fix linting errors
-    subprocess.run(  # noqa: S603
-        ["ruff", "check", "--fix", file_path],  # noqa: S607
-        capture_output=True,
-        text=True,
-    )
+    # 5. Run ruff workflow with error handling
+    try:
+        # Phase 1: Auto-fix linting errors
+        subprocess.run(  # noqa: S603
+            ["ruff", "check", "--fix", file_path],  # noqa: S607
+            capture_output=True,
+            text=True,
+        )
 
-    # 5. Phase 2: Format code
-    subprocess.run(  # noqa: S603
-        ["ruff", "format", file_path],  # noqa: S607
-        capture_output=True,
-        text=True,
-    )
+        # Phase 2: Format code
+        subprocess.run(  # noqa: S603
+            ["ruff", "format", file_path],  # noqa: S607
+            capture_output=True,
+            text=True,
+        )
 
-    # 6. Phase 3: Final validation
-    check_result = subprocess.run(  # noqa: S603
-        ["ruff", "check", file_path],  # noqa: S607
-        capture_output=True,
-        text=True,
-    )
+        # Phase 3: Final validation
+        check_result = subprocess.run(  # noqa: S603
+            ["ruff", "check", file_path],  # noqa: S607
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        # Handle subprocess errors
+        error_msg = f"Error running ruff: {e}"
+        output = {
+            "continue": True,
+            "systemMessage": error_msg,
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": error_msg,
+            },
+        }
+        print(json.dumps(output))
+        return 1
 
     # 7. Report results via JSON with systemMessage
     if check_result.returncode == 0:
@@ -73,7 +96,7 @@ def main():
             },
         }
         print(json.dumps(output))
-        sys.exit(0)
+        return 0
     else:
         # Error case - detailed message for Claude
         error_details = check_result.stdout.strip()
@@ -91,8 +114,8 @@ def main():
             },
         }
         print(json.dumps(output))
-        sys.exit(1)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
