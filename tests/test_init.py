@@ -392,11 +392,15 @@ def test_init_is_idempotent(tmp_project, monkeypatch):
     with open(settings) as f:
         config = json.load(f)
 
-    # Should have exactly 1 ruff hook
+    # Should have exactly 2 ruff hooks (Edit and Write)
     ruff_hooks = [
         h for h in config["hooks"]["PostToolUse"] if "ruff-claude-hook" in str(h)
     ]
-    assert len(ruff_hooks) == 1
+    assert len(ruff_hooks) == 2
+
+    # Verify we have both Edit and Write matchers
+    matchers = {h["matcher"] for h in ruff_hooks}
+    assert matchers == {"Edit", "Write"}
 
     # CLAUDE.md should not have duplicate sections
     claude_md = tmp_project / ".claude" / "CLAUDE.md"

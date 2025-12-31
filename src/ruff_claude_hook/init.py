@@ -22,12 +22,14 @@ def merge_settings(
     existing.setdefault("hooks", {})
     existing["hooks"].setdefault("PostToolUse", [])
 
-    # Check if ruff hook already exists
-    has_ruff_hook = any(
-        "ruff-claude-hook" in str(hook) for hook in existing["hooks"]["PostToolUse"]
+    # Check if this specific ruff hook (with same matcher) already exists
+    matcher = ruff_hook.get("matcher", "")
+    has_this_hook = any(
+        hook.get("matcher") == matcher and "ruff-claude-hook" in str(hook)
+        for hook in existing["hooks"]["PostToolUse"]
     )
 
-    if not has_ruff_hook:
+    if not has_this_hook:
         # Add ruff hook to PostToolUse
         existing["hooks"]["PostToolUse"].append(ruff_hook)
 
@@ -77,9 +79,13 @@ def init_project(force: bool = False) -> int:
     claude_dir.mkdir(exist_ok=True)
     print(f"✅ Directory: {claude_dir.absolute()}")
 
-    # Define ruff hook configuration
-    ruff_hook_config = {
+    # Define ruff hook configurations for both Edit and Write
+    ruff_edit_hook = {
         "matcher": "Edit",
+        "hooks": [{"type": "command", "command": "ruff-claude-hook"}],
+    }
+    ruff_write_hook = {
+        "matcher": "Write",
         "hooks": [{"type": "command", "command": "ruff-claude-hook"}],
     }
 
@@ -94,8 +100,9 @@ def init_project(force: bool = False) -> int:
             with open(settings_file) as f:
                 config = json.load(f)
 
-            # Merge ruff hook
-            config = merge_settings(config, ruff_hook_config)
+            # Merge both ruff hooks
+            config = merge_settings(config, ruff_edit_hook)
+            config = merge_settings(config, ruff_write_hook)
 
             # Write merged config
             with open(settings_file, "w") as f:

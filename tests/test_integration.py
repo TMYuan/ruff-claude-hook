@@ -185,17 +185,22 @@ def test_init_preserves_complex_existing_config(tmp_project, monkeypatch):
         result = json.load(f)
 
     # Original hooks preserved
-    assert len(result["hooks"]["PostToolUse"]) == 3  # 2 original + 1 ruff
+    assert (
+        len(result["hooks"]["PostToolUse"]) == 4
+    )  # 2 original + 2 ruff (Edit + Write)
     assert "PreToolUse" in result["hooks"]
 
     # Custom settings preserved
     assert result["customSettings"]["nested"]["deeply"]["value"] == "preserved"
     assert result["arrayOption"] == [1, 2, 3]
 
-    # Ruff hook added
-    assert any(
-        "ruff-claude-hook" in str(hook) for hook in result["hooks"]["PostToolUse"]
-    )
+    # Both ruff hooks added
+    ruff_hooks = [
+        h for h in result["hooks"]["PostToolUse"] if "ruff-claude-hook" in str(h)
+    ]
+    assert len(ruff_hooks) == 2
+    matchers = {h["matcher"] for h in ruff_hooks}
+    assert matchers == {"Edit", "Write"}
 
 
 @pytest.mark.integration

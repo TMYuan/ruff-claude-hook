@@ -24,9 +24,9 @@ def main():
         # Not valid JSON, skip silently
         return 0
 
-    # 2. Check if this is an Edit tool call
+    # 2. Check if this is an Edit or Write tool call
     tool_name = data.get("tool_name", "")
-    if tool_name != "Edit":
+    if tool_name not in ("Edit", "Write"):
         return 0
 
     # 3. Extract file path from tool input

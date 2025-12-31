@@ -255,8 +255,30 @@ def test_hook_handles_subprocess_exception(
 
 
 @pytest.mark.unit
-def test_hook_skips_non_edit_tool(mock_stdin, sample_python_file, capsys):
-    """Test that non-Edit tool calls are skipped."""
+def test_hook_processes_write_tool(
+    mock_stdin, sample_python_file, capsys, capture_json_output
+):
+    """Test that Write tool calls are processed."""
+    input_data = {
+        "tool_name": "Write",
+        "parameters": {"file_path": str(sample_python_file)},
+    }
+    mock_stdin(json.dumps(input_data))
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = Mock(returncode=0, stderr="")
+        main()
+
+        # Verify ruff was called
+        assert mock_run.call_count == 3
+
+    result = capture_json_output(capsys)
+    assert result["continue"] is True
+
+
+@pytest.mark.unit
+def test_hook_skips_non_edit_write_tool(mock_stdin, sample_python_file, capsys):
+    """Test that non-Edit/Write tool calls are skipped."""
     input_data = {
         "tool_name": "Read",
         "parameters": {"file_path": str(sample_python_file)},

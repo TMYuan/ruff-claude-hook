@@ -9,6 +9,15 @@
             "command": "ruff-claude-hook"
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ruff-claude-hook"
+          }
+        ]
       }
     ]
   }

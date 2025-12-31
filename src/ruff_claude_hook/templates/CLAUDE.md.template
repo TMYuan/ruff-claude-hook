@@ -4,11 +4,11 @@
 
 ## Automatic Code Quality Workflow
 
-This project has an automated ruff workflow that runs **after you edit any Python file**.
+This project has an automated ruff workflow that runs **after you edit or create any Python file**.
 
 ### How It Works
 
-When you edit a Python file, a PostToolUse hook automatically executes:
+When you edit or create a Python file, a PostToolUse hook automatically executes:
 
 1. **ruff check --fix** - Automatically fixes linting errors where possible
 2. **ruff format** - Formats code to PEP 8 standard
